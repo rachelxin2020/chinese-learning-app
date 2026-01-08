@@ -2,104 +2,236 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Chinese Learner</title>
-
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        
+        :root {
+            --ios-bg: #f2f2f7;
+            --ios-card: #ffffff;
+            --ios-blue: #007aff;
+        }
+
         body {
-            font-family: sans-serif;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-            padding: 20px;
-            background-color: #f0f2f5;
-            touch-action: manipulation;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Noto Sans SC";
+            background-color: var(--ios-bg);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        /* Large Title Header typical of iOS */
+        .ios-header {
+            padding-top: env(safe-area-inset-top);
+            background: rgba(242, 242, 247, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         .char-card {
-            width: 120px;
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            background: white;
-            border-radius: 20px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            -webkit-tap-highlight-color: transparent;
-            transition: transform 0.1s, background-color 0.1s;
+            background: var(--ios-card);
+            border-radius: 12px;
+            transition: transform 0.1s ease, background-color 0.1s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .char-card:active {
-            transform: scale(0.9);
-            background-color: #d1e7ff;
+            transform: scale(0.95);
+            background-color: #e5e5ea;
+        }
+
+        /* Bottom Tab Bar */
+        .tab-bar {
+            padding-bottom: env(safe-area-inset-bottom);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 0.5px solid rgba(0,0,0,0.1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            display: none;
         }
     </style>
 </head>
+<body class="flex flex-col min-h-screen">
 
-<body>
+    <!-- iOS Style Header -->
+    <header class="ios-header sticky top-0 z-20 px-4 pb-2">
+        <div class="flex justify-between items-center py-4">
+            <h1 class="text-3xl font-bold tracking-tight text-black">Learn</h1>
+            <button onclick="toggleMode()" id="mode-btn" class="text-blue-500 font-medium">
+                AI Voice: Off
+            </button>
+        </div>
+        <div class="bg-gray-200/60 rounded-xl p-2 flex items-center space-x-2">
+            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span class="text-gray-500 text-sm">Search characters...</span>
+        </div>
+    </header>
 
-    <!-- Character cards -->
-    <div class="char-card" ontouchstart="speak('你')">你</div>
-    <div class="char-card" ontouchstart="speak('好')">好</div>
-    <div class="char-card" ontouchstart="speak('学')">学</div>
-    <div class="char-card" ontouchstart="speak('习')">习</div>
+    <!-- Main Content Area -->
+    <main class="flex-grow px-4 pt-4 pb-24">
+        <div id="app-container" class="grid grid-cols-3 gap-3">
+            <!-- Cards will be injected here -->
+        </div>
+    </main>
 
-    <!-- Speech logic -->
+    <!-- iOS Tab Bar -->
+    <nav class="tab-bar fixed bottom-0 w-full flex justify-around items-center py-3 z-20">
+        <div class="flex flex-col items-center text-blue-500">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+            <span class="text-[10px] mt-1">Cards</span>
+        </div>
+        <div class="flex flex-col items-center text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            <span class="text-[10px] mt-1">Books</span>
+        </div>
+        <div class="flex flex-col items-center text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <span class="text-[10px] mt-1">Settings</span>
+        </div>
+    </nav>
+
+    <!-- Modal for Feedback -->
+    <div id="overlay" class="fixed inset-0 bg-black/30 hidden z-40" onclick="closeModal()"></div>
+    <div id="msg-box" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-72 rounded-2xl hidden z-50 p-6 text-center">
+        <h3 id="msg-title" class="font-bold text-lg mb-2">Notice</h3>
+        <p id="msg-text" class="text-sm text-gray-600 mb-6"></p>
+        <button onclick="closeModal()" class="text-blue-500 font-bold border-t border-gray-100 w-full pt-4">OK</button>
+    </div>
+
     <script>
-        let voices = [];
+        const characters = [
+            { zh: '你', py: 'nǐ' }, { zh: '好', py: 'hǎo' }, { zh: '我', py: 'wǒ' }, { zh: '他', py: 'tā' },
+            { zh: '人', py: 'rén' }, { zh: '大', py: 'dà' }, { zh: '小', py: 'xiǎo' }, { zh: '学', py: 'xué' },
+            { zh: '习', py: 'xí' }, { zh: '中', py: 'zhōng' }, { zh: '国', py: 'guó' }, { zh: '日', py: 'rì' },
+            { zh: '月', py: 'yuè' }, { zh: '山', py: 'shān' }, { zh: '水', py: 'shuǐ' }, { zh: '火', py: 'huǒ' },
+            { zh: '口', py: 'kǒu' }, { zh: '手', py: 'shǒu' }, { zh: '心', py: 'xīn' }, { zh: '不', py: 'bù' },
+            { zh: '是', py: 'shì' }, { zh: '有', py: 'yǒu' }, { zh: '去', py: 'qù' }, { zh: '来', py: 'lái' },
+            { zh: '天', py: 'tiān' }, { zh: '地', py: 'dì' }, { zh: '一', py: 'yī' }, { zh: '二', py: 'èr' },
+            { zh: '三', py: 'sān' }, { zh: '上', py: 'shàng' }, { zh: '下', py: 'xià' }, { zh: '看', py: 'kàn' }
+        ];
 
-        // Load voices (iOS loads them asynchronously)
-        function loadVoices() {
-            voices = speechSynthesis.getVoices();
+        let useGeminiVoice = false;
+        const apiKey = ""; 
+
+        function initApp() {
+            const container = document.getElementById('app-container');
+            characters.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'char-card flex flex-col items-center justify-center aspect-square py-4';
+                card.innerHTML = `
+                    <span class="text-gray-400 text-xs mb-1">${item.py}</span>
+                    <span class="text-3xl font-medium text-gray-900">${item.zh}</span>
+                `;
+                card.addEventListener('click', () => handleSpeak(item.zh));
+                container.appendChild(card);
+            });
         }
 
-        speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
-
-        // Get a Chinese voice explicitly
-        function getChineseVoice() {
-            return voices.find(v =>
-                v.lang === 'zh-CN' ||
-                v.lang === 'zh-TW' ||
-                v.lang.startsWith('zh')
-            );
+        function toggleMode() {
+            useGeminiVoice = !useGeminiVoice;
+            const btn = document.getElementById('mode-btn');
+            btn.innerText = useGeminiVoice ? 'AI Voice: On' : 'AI Voice: Off';
+            btn.style.color = useGeminiVoice ? '#34c759' : '#007aff';
         }
 
-        // Speak function (forces Chinese voice)
-        function speak(text) {
-            speechSynthesis.cancel();
+        async function handleSpeak(text) {
+            if (useGeminiVoice) {
+                await speakGemini(text);
+            } else {
+                speakSystem(text);
+            }
+        }
 
+        function speakSystem(text) {
+            window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-CN';
             utterance.rate = 0.8;
-
-            const zhVoice = getChineseVoice();
-            if (!zhVoice) {
-                alert(
-                    'Chinese voice not installed.\n\n' +
-                    'Install via:\n' +
-                    'Settings → Accessibility → Spoken Content → Voices → Chinese'
-                );
-                return;
-            }
-
-            utterance.voice = zhVoice;
-            speechSynthesis.speak(utterance);
+            window.speechSynthesis.speak(utterance);
         }
 
-        // iOS audio unlock (required once)
-        document.addEventListener('touchstart', function unlock() {
-            const silent = new SpeechSynthesisUtterance(' ');
-            speechSynthesis.speak(silent);
-            document.removeEventListener('touchstart', unlock);
-        }, { once: true });
-    </script>
+        async function speakGemini(text) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: `Say clearly: ${text}` }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
+                }
+            };
 
+            try {
+                const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                const data = await response.json();
+                const pcmData = data.candidates[0].content.parts[0].inlineData.data;
+                playWavFromPcm(pcmData);
+            } catch (err) {
+                showModal("Voice Error", "Could not reach the AI voice. Check your internet.");
+                speakSystem(text);
+            }
+        }
+
+        function playWavFromPcm(base64Pcm) {
+            const binaryString = atob(base64Pcm);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            const header = createWavHeader(len, 24000);
+            const blob = new Blob([header, bytes], { type: 'audio/wav' });
+            const audio = new Audio(URL.createObjectURL(blob));
+            audio.play();
+        }
+
+        function createWavHeader(dataLength, sampleRate) {
+            const header = new ArrayBuffer(44);
+            const view = new DataView(header);
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataLength, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); 
+            view.setUint16(22, 1, true); 
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataLength, true);
+            return header;
+        }
+
+        function showModal(title, text) {
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-text').innerText = text;
+            document.getElementById('msg-box').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('msg-box').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        window.onload = () => {
+            initApp();
+            // Required for some mobile browsers to unlock audio context
+            document.addEventListener('touchstart', () => {
+                const s = new SpeechSynthesisUtterance('');
+                window.speechSynthesis.speak(s);
+            }, { once: true });
+        };
+    </script>
 </body>
 </html>
