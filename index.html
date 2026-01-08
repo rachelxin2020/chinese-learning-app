@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Learner</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* This creates a grid that automatically adjusts columns for mobile */
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            width: 100%;
+            max-width: 500px; /* Keeps it from getting too wide on tablets */
+        }
+
+        .char-card {
+            aspect-ratio: 1 / 1; /* Keeps them perfectly square */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem; /* Large text for easy reading */
+            background: white;
+            border-radius: 15px;
+            border: 2px solid #eee;
+            cursor: pointer;
+            /* Prevents blue highlight box when tapping on mobile */
+            -webkit-tap-highlight-color: transparent; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .char-card:active {
+            background-color: #007bff;
+            color: white;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="char-card" onclick="speak('你')">你</div>
+        <div class="char-card" onclick="speak('好')">好</div>
+        <div class="char-card" onclick="speak('我')">我</div>
+        <div class="char-card" onclick="speak('爱')">爱</div>
+        <div class="char-card" onclick="speak('书')">书</div>
+        <div class="char-card" onclick="speak('家')">家</div>
+    </div>
+
+    <script>
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>
