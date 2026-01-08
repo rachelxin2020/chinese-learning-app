@@ -127,10 +127,13 @@
                 const btn = document.createElement('button');
                 btn.className = `week-btn ${weekName === currentWeek ? 'active' : ''}`;
                 btn.innerText = weekName;
-                btn.onclick = () => {
+                
+                // Use pointerdown here too for better iOS responsiveness
+                btn.addEventListener('pointerdown', () => {
+                    unlockAudio(); // Unlock audio immediately when user interacts with menu
                     currentWeek = weekName;
                     updateUI();
-                };
+                });
                 menu.appendChild(btn);
             });
         }
@@ -161,23 +164,31 @@
         }
 
         async function handleSpeak(text) {
+            // Explicitly unlock audio on every tap
             unlockAudio();
-            window.speechSynthesis.cancel();
             
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 0.85;
-            
-            const voices = window.speechSynthesis.getVoices();
-            const zhVoice = voices.find(v => v.lang.includes('zh-CN') || v.lang.includes('zh-HK'));
-            if (zhVoice) utterance.voice = zhVoice;
+            // Wait a tiny bit for the unlock to process
+            setTimeout(() => {
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.85;
+                
+                const voices = window.speechSynthesis.getVoices();
+                const zhVoice = voices.find(v => v.lang.includes('zh-CN') || v.lang.includes('zh-HK') || v.lang === 'zh');
+                if (zhVoice) utterance.voice = zhVoice;
 
-            window.speechSynthesis.speak(utterance);
+                window.speechSynthesis.speak(utterance);
+            }, 10);
         }
 
         function unlockAudio() {
+            // Method 1: Speech synthesis unlock
             const s = new SpeechSynthesisUtterance('');
             window.speechSynthesis.speak(s);
+            
+            // Method 2: Web Audio API / HTML5 Audio unlock
             const audio = new Audio();
             audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
             audio.play().catch(() => {});
@@ -185,6 +196,7 @@
 
         window.onload = () => {
             updateUI();
+            // Global touchstart listener to keep audio channel warm
             document.addEventListener('touchstart', unlockAudio, { passive: true });
         };
     </script>
