@@ -68,13 +68,33 @@
     </div>
 
     <script>
-        function speak(text) {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 0.9;
-            window.speechSynthesis.speak(utterance);
-        }
-    </script>
+    function speak(text) {
+        // 1. Cancel any existing speech
+        window.speechSynthesis.cancel();
+
+        // 2. Create the utterance
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // 3. Force the language to Mandarin
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.8; // Slightly slower for clarity
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0; // Ensure volume is at max
+
+        // 4. Debugging: This helps you see if the phone "thinks" it is talking
+        utterance.onstart = () => console.log("Started speaking...");
+        utterance.onerror = (event) => console.error("Speech error:", event.error);
+
+        // 5. Speak
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // EXTRA MOBILE FIX: 
+    // This "pre-warms" the speech engine when the user first touches the screen
+    document.body.addEventListener('touchstart', function() {
+        const i = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(i);
+    }, { once: true });
+</script>
 </body>
 </html>
