@@ -21,232 +21,232 @@
             background-color: var(--ios-bg);
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            touch-action: manipulation; /* Prevents double-tap zoom which blocks clicks */
+            touch-action: manipulation;
         }
 
         .ios-header {
             padding-top: env(safe-area-inset-top);
-            background: rgba(242, 242, 247, 0.8);
+            background: rgba(242, 242, 247, 0.95);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 0.5px solid rgba(0,0,0,0.1);
+        }
+
+        .week-picker {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 0 16px 12px 16px;
+            scrollbar-width: none;
+        }
+        .week-picker::-webkit-scrollbar {
+            display: none;
+        }
+
+        .week-btn {
+            white-space: nowrap;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            background: #e5e5ea;
+            color: #8e8e93;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .week-btn.active {
+            background: var(--ios-blue);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
         }
 
         .char-card {
             background: var(--ios-card);
-            border-radius: 12px;
-            transition: transform 0.1s ease, background-color 0.1s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
             cursor: pointer;
-            -webkit-user-select: none;
+            position: relative;
+            overflow: hidden;
+            /* Fix for iOS tap highlight */
+            -webkit-tap-highlight-color: transparent;
         }
 
+        /* Visual feedback on press */
         .char-card:active {
-            transform: scale(0.92);
-            background-color: #e5e5ea;
+            transform: scale(0.96);
+            background-color: #f2f2f7;
         }
 
-        .tab-bar {
-            padding-bottom: env(safe-area-inset-bottom);
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-top: 0.5px solid rgba(0,0,0,0.1);
+        .pinyin {
+            font-size: 0.9rem;
+            color: #86868b;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        
+        .char-text {
+            font-size: 2.5rem;
+            color: #1c1c1e;
+            line-height: 1.1;
+            font-weight: 500;
         }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <header class="ios-header sticky top-0 z-20 px-4 pb-2">
-        <div class="flex justify-between items-center py-4">
-            <h1 class="text-3xl font-bold tracking-tight text-black">Learn</h1>
-            <div class="flex flex-col items-end">
-                <button onclick="toggleMode()" id="mode-btn" class="text-blue-500 font-medium px-2 py-1">
-                    AI Voice: Off
-                </button>
-                <span class="text-[10px] text-gray-400 mt-1">Check Silent Switch 🔔</span>
-            </div>
+    <header class="ios-header">
+        <div class="px-4 py-4">
+            <h1 class="text-2xl font-bold tracking-tight text-black">Chinese Learner</h1>
         </div>
-        <div class="bg-gray-200/60 rounded-xl p-2 flex items-center space-x-2">
-            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            <span class="text-gray-500 text-sm">Tap a card to hear it...</span>
-        </div>
+        <div id="week-menu" class="week-picker"></div>
     </header>
 
-    <main class="flex-grow px-4 pt-4 pb-24">
-        <div id="app-container" class="grid grid-cols-3 gap-3"></div>
+    <main class="flex-grow px-4 pt-6 pb-12">
+        <div id="app-container" class="grid grid-cols-3 gap-4"></div>
     </main>
 
-    <nav class="tab-bar fixed bottom-0 w-full flex justify-around items-center py-3 z-20">
-        <div class="flex flex-col items-center text-blue-500">
-            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
-            <span class="text-[10px] mt-1">Cards</span>
-        </div>
-        <div class="flex flex-col items-center text-gray-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-            <span class="text-[10px] mt-1">Books</span>
-        </div>
-        <div class="flex flex-col items-center text-gray-400">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            <span class="text-[10px] mt-1">Settings</span>
-        </div>
-    </nav>
-
-    <div id="overlay" class="fixed inset-0 bg-black/30 hidden z-40" onclick="closeModal()"></div>
-    <div id="msg-box" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-72 rounded-2xl hidden z-50 p-6 text-center">
-        <h3 id="msg-title" class="font-bold text-lg mb-2 text-black">Notice</h3>
-        <p id="msg-text" class="text-sm text-gray-600 mb-6"></p>
-        <button onclick="closeModal()" class="text-blue-500 font-bold border-t border-gray-100 w-full pt-4">OK</button>
-    </div>
-
     <script>
-        const characters = [
-            { zh: '你', py: 'nǐ' }, { zh: '好', py: 'hǎo' }, { zh: '我', py: 'wǒ' }, { zh: '他', py: 'tā' },
-            { zh: '人', py: 'rén' }, { zh: '大', py: 'dà' }, { zh: '小', py: 'xiǎo' }, { zh: '学', py: 'xué' },
-            { zh: '习', py: 'xí' }, { zh: '中', py: 'zhōng' }, { zh: '国', py: 'guó' }, { zh: '日', py: 'rì' },
-            { zh: '月', py: 'yuè' }, { zh: '山', py: 'shān' }, { zh: '水', py: 'shuǐ' }, { zh: '火', py: 'huǒ' },
-            { zh: '口', py: 'kǒu' }, { zh: '手', py: 'shǒu' }, { zh: '心', py: 'xīn' }, { zh: '不', py: 'bù' },
-            { zh: '是', py: 'shì' }, { zh: '有', py: 'yǒu' }, { zh: '去', py: 'qù' }, { zh: '来', py: 'lái' },
-            { zh: '天', py: 'tiān' }, { zh: '地', py: 'dì' }, { zh: '一', py: 'yī' }, { zh: '二', py: 'èr' },
-            { zh: '三', py: 'sān' }, { zh: '上', py: 'shàng' }, { zh: '下', py: 'xià' }, { zh: '看', py: 'kàn' }
-        ];
+        // --- 1. CONFIGURATION ---
+        const weeklyData = {
+            "Week 1": [
+                { zh: '你', py: 'nǐ' }, { zh: '好', py: 'hǎo' }, { zh: '我', py: 'wǒ' }, { zh: '他', py: 'tā' },
+                { zh: '人', py: 'rén' }, { zh: '大', py: 'dà' }, { zh: '小', py: 'xiǎo' }, { zh: '学', py: 'xué' }
+            ],
+            "Week 2": [
+                { zh: '中', py: 'zhōng' }, { zh: '国', py: 'guó' }, { zh: '日', py: 'rì' }, { zh: '月', py: 'yuè' },
+                { zh: '山', py: 'shān' }, { zh: '水', py: 'shuǐ' }, { zh: '火', py: 'huǒ' }, { zh: '习', py: 'xí' }
+            ],
+            "Week 3": [
+                { zh: '口', py: 'kǒu' }, { zh: '手', py: 'shǒu' }, { zh: '心', py: 'xīn' }, { zh: '不', py: 'bù' },
+                { zh: '是', py: 'shì' }, { zh: '有', py: 'yǒu' }, { zh: '去', py: 'qù' }, { zh: '来', py: 'lái' }
+            ],
+            "Week 4": [
+                { zh: '天', py: 'tiān' }, { zh: '地', py: 'dì' }, { zh: '一', py: 'yī' }, { zh: '二', py: 'èr' },
+                { zh: '三', py: 'sān' }, { zh: '上', py: 'shàng' }, { zh: '下', py: 'xià' }, { zh: '看', py: 'kàn' }
+            ],
+            "Week 5": [
+                { zh: '天', py: 'tiān' }
+            ],
+        };
 
-        let useGeminiVoice = false;
-        const apiKey = ""; 
+        let currentWeek = "Week 1";
+        
+        // --- 2. AUDIO SYSTEM (Fixed for iOS) ---
+        // Global variable to hold the utterance prevents garbage collection
+        window.currentUtterance = null; 
 
-        function initApp() {
+        function initAudio() {
+            // Check for voices immediately
+            window.speechSynthesis.getVoices();
+            // Also listen for async loading of voices
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+            }
+        }
+
+        function playSound(text) {
+            // A. Cancel any currently playing speech to prevent queue lock-up
+            window.speechSynthesis.cancel();
+
+            // B. Create the utterance
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8;
+
+            // C. Force Voice Selection (Critical for iOS)
+            const voices = window.speechSynthesis.getVoices();
+            // Look for CN, then HK, then TW, then any 'zh'
+            const zhVoice = voices.find(v => v.lang === 'zh-CN') || 
+                          voices.find(v => v.lang === 'zh-HK') || 
+                          voices.find(v => v.lang === 'zh-TW') ||
+                          voices.find(v => v.lang.indexOf('zh') !== -1);
+            
+            if (zhVoice) {
+                utterance.voice = zhVoice;
+            }
+
+            // D. Assign to global variable to prevent iOS Garbage Collection bug
+            window.currentUtterance = utterance;
+
+            // E. Optional: Event listeners for debugging (removes reference when done)
+            utterance.onend = () => { window.currentUtterance = null; };
+            utterance.onerror = () => { window.currentUtterance = null; };
+
+            // F. Speak
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function unlockAudioContext() {
+            // Play a silent buffer to wake up the Audio Context on first touch
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+                gain.gain.value = 0; // Silent
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+                oscillator.start(0);
+                oscillator.stop(0.001);
+            }
+        }
+
+        // --- 3. UI RENDERING ---
+        function renderWeekMenu() {
+            const menu = document.getElementById('week-menu');
+            menu.innerHTML = '';
+            Object.keys(weeklyData).forEach(weekName => {
+                const btn = document.createElement('button');
+                btn.className = `week-btn ${weekName === currentWeek ? 'active' : ''}`;
+                btn.innerText = weekName;
+                btn.onclick = () => {
+                    currentWeek = weekName;
+                    renderApp();
+                    // Don't play sound on menu click, just switch view
+                };
+                menu.appendChild(btn);
+            });
+        }
+
+        function renderApp() {
+            renderWeekMenu();
             const container = document.getElementById('app-container');
-            characters.forEach(item => {
+            container.innerHTML = '';
+            
+            const list = weeklyData[currentWeek] || [];
+            list.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'char-card flex flex-col items-center justify-center aspect-square py-4';
+                card.className = 'char-card';
                 card.innerHTML = `
-                    <span class="text-gray-400 text-xs mb-1 pointer-events-none">${item.py}</span>
-                    <span class="text-3xl font-medium text-gray-900 pointer-events-none">${item.zh}</span>
+                    <div class="pinyin">${item.py}</div>
+                    <div class="char-text">${item.zh}</div>
                 `;
-                
-                // Use pointerdown for faster response on iOS and to ensure audio unlock
-                card.addEventListener('pointerdown', (e) => {
-                    handleSpeak(item.zh);
-                });
+                // Use standard onclick for reliability
+                card.onclick = () => playSound(item.zh);
                 container.appendChild(card);
             });
         }
 
-        function toggleMode() {
-            useGeminiVoice = !useGeminiVoice;
-            const btn = document.getElementById('mode-btn');
-            btn.innerText = useGeminiVoice ? 'AI Voice: On' : 'AI Voice: Off';
-            btn.style.color = useGeminiVoice ? '#34c759' : '#007aff';
-            unlockAudio();
-        }
-
-        async function handleSpeak(text) {
-            // Very important for iOS: unlock audio on every interaction
-            unlockAudio();
-            
-            window.speechSynthesis.cancel();
-            
-            if (useGeminiVoice) {
-                await speakGemini(text);
-            } else {
-                speakSystem(text);
-            }
-        }
-
-        function speakSystem(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-CN';
-            utterance.rate = 0.9;
-            
-            // Re-fetch voices just in case Safari lost them
-            const voices = window.speechSynthesis.getVoices();
-            const zhVoice = voices.find(v => v.lang.includes('zh-CN') || v.lang.includes('zh-HK'));
-            if (zhVoice) utterance.voice = zhVoice;
-
-            window.speechSynthesis.speak(utterance);
-        }
-
-        async function speakGemini(text) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: text }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
-                }
-            };
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                const pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                if (pcmData) {
-                    playWavFromPcm(pcmData);
-                } else {
-                    speakSystem(text);
-                }
-            } catch (err) {
-                speakSystem(text);
-            }
-        }
-
-        function playWavFromPcm(base64Pcm) {
-            const binaryString = atob(base64Pcm);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-            
-            const header = createWavHeader(len, 24000);
-            const blob = new Blob([header, bytes], { type: 'audio/wav' });
-            const audio = new Audio(URL.createObjectURL(blob));
-            audio.play().catch(() => speakSystem("Speech Error"));
-        }
-
-        function createWavHeader(dataLength, sampleRate) {
-            const header = new ArrayBuffer(44);
-            const view = new DataView(header);
-            const writeString = (offset, string) => {
-                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-            };
-            writeString(0, 'RIFF');
-            view.setUint32(4, 36 + dataLength, true);
-            writeString(8, 'WAVE');
-            writeString(12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); 
-            view.setUint16(22, 1, true); 
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true);
-            view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true);
-            writeString(36, 'data');
-            view.setUint32(40, dataLength, true);
-            return header;
-        }
-
-        function closeModal() {
-            document.getElementById('msg-box').style.display = 'none';
-            document.getElementById('overlay').style.display = 'none';
-        }
-
-        function unlockAudio() {
-            // Attempt to play a silent utterance
-            const s = new SpeechSynthesisUtterance('');
-            window.speechSynthesis.speak(s);
-            
-            // Create a small audio object to wake up the audio context
-            const audio = new Audio();
-            audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
-            audio.play().catch(() => {});
-        }
-
+        // --- 4. INITIALIZATION ---
         window.onload = () => {
-            initApp();
-            // Listen for touchstart to "warm up" the audio context
-            document.addEventListener('touchstart', unlockAudio, { passive: true });
+            initAudio();
+            renderApp();
+            
+            // One-time unlock on first interaction anywhere
+            document.body.addEventListener('touchstart', function() {
+                unlockAudioContext();
+                // Prime speech synthesis with empty string
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+            }, { once: true });
         };
     </script>
 </body>
