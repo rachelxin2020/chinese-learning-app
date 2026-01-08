@@ -21,9 +21,9 @@
             background-color: var(--ios-bg);
             -webkit-tap-highlight-color: transparent;
             user-select: none;
+            touch-action: manipulation; /* Prevents double-tap zoom which blocks clicks */
         }
 
-        /* Large Title Header typical of iOS */
         .ios-header {
             padding-top: env(safe-area-inset-top);
             background: rgba(242, 242, 247, 0.8);
@@ -36,14 +36,15 @@
             border-radius: 12px;
             transition: transform 0.1s ease, background-color 0.1s ease;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            cursor: pointer;
+            -webkit-user-select: none;
         }
 
         .char-card:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
             background-color: #e5e5ea;
         }
 
-        /* Bottom Tab Bar */
         .tab-bar {
             padding-bottom: env(safe-area-inset-bottom);
             background: rgba(255, 255, 255, 0.9);
@@ -51,37 +52,30 @@
             -webkit-backdrop-filter: blur(10px);
             border-top: 0.5px solid rgba(0,0,0,0.1);
         }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            display: none;
-        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <!-- iOS Style Header -->
     <header class="ios-header sticky top-0 z-20 px-4 pb-2">
         <div class="flex justify-between items-center py-4">
             <h1 class="text-3xl font-bold tracking-tight text-black">Learn</h1>
-            <button onclick="toggleMode()" id="mode-btn" class="text-blue-500 font-medium">
-                AI Voice: Off
-            </button>
+            <div class="flex flex-col items-end">
+                <button onclick="toggleMode()" id="mode-btn" class="text-blue-500 font-medium px-2 py-1">
+                    AI Voice: Off
+                </button>
+                <span class="text-[10px] text-gray-400 mt-1">Check Silent Switch 🔔</span>
+            </div>
         </div>
         <div class="bg-gray-200/60 rounded-xl p-2 flex items-center space-x-2">
             <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            <span class="text-gray-500 text-sm">Search characters...</span>
+            <span class="text-gray-500 text-sm">Tap a card to hear it...</span>
         </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="flex-grow px-4 pt-4 pb-24">
-        <div id="app-container" class="grid grid-cols-3 gap-3">
-            <!-- Cards will be injected here -->
-        </div>
+        <div id="app-container" class="grid grid-cols-3 gap-3"></div>
     </main>
 
-    <!-- iOS Tab Bar -->
     <nav class="tab-bar fixed bottom-0 w-full flex justify-around items-center py-3 z-20">
         <div class="flex flex-col items-center text-blue-500">
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
@@ -97,10 +91,9 @@
         </div>
     </nav>
 
-    <!-- Modal for Feedback -->
     <div id="overlay" class="fixed inset-0 bg-black/30 hidden z-40" onclick="closeModal()"></div>
     <div id="msg-box" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white w-72 rounded-2xl hidden z-50 p-6 text-center">
-        <h3 id="msg-title" class="font-bold text-lg mb-2">Notice</h3>
+        <h3 id="msg-title" class="font-bold text-lg mb-2 text-black">Notice</h3>
         <p id="msg-text" class="text-sm text-gray-600 mb-6"></p>
         <button onclick="closeModal()" class="text-blue-500 font-bold border-t border-gray-100 w-full pt-4">OK</button>
     </div>
@@ -126,10 +119,14 @@
                 const card = document.createElement('div');
                 card.className = 'char-card flex flex-col items-center justify-center aspect-square py-4';
                 card.innerHTML = `
-                    <span class="text-gray-400 text-xs mb-1">${item.py}</span>
-                    <span class="text-3xl font-medium text-gray-900">${item.zh}</span>
+                    <span class="text-gray-400 text-xs mb-1 pointer-events-none">${item.py}</span>
+                    <span class="text-3xl font-medium text-gray-900 pointer-events-none">${item.zh}</span>
                 `;
-                card.addEventListener('click', () => handleSpeak(item.zh));
+                
+                // Use pointerdown for faster response on iOS and to ensure audio unlock
+                card.addEventListener('pointerdown', (e) => {
+                    handleSpeak(item.zh);
+                });
                 container.appendChild(card);
             });
         }
@@ -139,9 +136,15 @@
             const btn = document.getElementById('mode-btn');
             btn.innerText = useGeminiVoice ? 'AI Voice: On' : 'AI Voice: Off';
             btn.style.color = useGeminiVoice ? '#34c759' : '#007aff';
+            unlockAudio();
         }
 
         async function handleSpeak(text) {
+            // Very important for iOS: unlock audio on every interaction
+            unlockAudio();
+            
+            window.speechSynthesis.cancel();
+            
             if (useGeminiVoice) {
                 await speakGemini(text);
             } else {
@@ -150,17 +153,22 @@
         }
 
         function speakSystem(text) {
-            window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-CN';
-            utterance.rate = 0.8;
+            utterance.rate = 0.9;
+            
+            // Re-fetch voices just in case Safari lost them
+            const voices = window.speechSynthesis.getVoices();
+            const zhVoice = voices.find(v => v.lang.includes('zh-CN') || v.lang.includes('zh-HK'));
+            if (zhVoice) utterance.voice = zhVoice;
+
             window.speechSynthesis.speak(utterance);
         }
 
         async function speakGemini(text) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
             const payload = {
-                contents: [{ parts: [{ text: `Say clearly: ${text}` }] }],
+                contents: [{ parts: [{ text: text }] }],
                 generationConfig: {
                     responseModalities: ["AUDIO"],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
@@ -168,12 +176,19 @@
             };
 
             try {
-                const response = await fetch(url, { method: 'POST', body: JSON.stringify(payload) });
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
                 const data = await response.json();
-                const pcmData = data.candidates[0].content.parts[0].inlineData.data;
-                playWavFromPcm(pcmData);
+                const pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                if (pcmData) {
+                    playWavFromPcm(pcmData);
+                } else {
+                    speakSystem(text);
+                }
             } catch (err) {
-                showModal("Voice Error", "Could not reach the AI voice. Check your internet.");
                 speakSystem(text);
             }
         }
@@ -187,7 +202,7 @@
             const header = createWavHeader(len, 24000);
             const blob = new Blob([header, bytes], { type: 'audio/wav' });
             const audio = new Audio(URL.createObjectURL(blob));
-            audio.play();
+            audio.play().catch(() => speakSystem("Speech Error"));
         }
 
         function createWavHeader(dataLength, sampleRate) {
@@ -212,25 +227,26 @@
             return header;
         }
 
-        function showModal(title, text) {
-            document.getElementById('msg-title').innerText = title;
-            document.getElementById('msg-text').innerText = text;
-            document.getElementById('msg-box').style.display = 'block';
-            document.getElementById('overlay').style.display = 'block';
-        }
-
         function closeModal() {
             document.getElementById('msg-box').style.display = 'none';
             document.getElementById('overlay').style.display = 'none';
         }
 
+        function unlockAudio() {
+            // Attempt to play a silent utterance
+            const s = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(s);
+            
+            // Create a small audio object to wake up the audio context
+            const audio = new Audio();
+            audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
+            audio.play().catch(() => {});
+        }
+
         window.onload = () => {
             initApp();
-            // Required for some mobile browsers to unlock audio context
-            document.addEventListener('touchstart', () => {
-                const s = new SpeechSynthesisUtterance('');
-                window.speechSynthesis.speak(s);
-            }, { once: true });
+            // Listen for touchstart to "warm up" the audio context
+            document.addEventListener('touchstart', unlockAudio, { passive: true });
         };
     </script>
 </body>
