@@ -31,17 +31,16 @@
             -webkit-backdrop-filter: blur(20px);
         }
 
-        /* Styling for the horizontal week picker */
         .week-picker {
             display: flex;
             overflow-x: auto;
             scroll-behavior: smooth;
-            scrollbar-width: none; /* Hide scrollbar Firefox */
-            -ms-overflow-style: none;  /* Hide scrollbar IE/Edge */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             padding-bottom: 8px;
         }
         .week-picker::-webkit-scrollbar {
-            display: none; /* Hide scrollbar Chrome/Safari */
+            display: none;
         }
 
         .week-btn {
@@ -83,10 +82,7 @@
             <h1 class="text-2xl font-bold tracking-tight text-black">Chinese Learner</h1>
         </div>
         
-        <!-- Week Selection Menu -->
-        <div id="week-menu" class="week-picker pb-2">
-            <!-- Buttons will be generated here -->
-        </div>
+        <div id="week-menu" class="week-picker pb-2"></div>
     </header>
 
     <main class="flex-grow px-4 pt-6 pb-12">
@@ -94,7 +90,6 @@
     </main>
 
     <script>
-        // --- DATA SECTION: Add new weeks here ---
         const weeklyData = {
             "Week 1": [
                 { zh: '你', py: 'nǐ' }, { zh: '好', py: 'hǎo' }, { zh: '我', py: 'wǒ' }, { zh: '他', py: 'tā' },
@@ -122,15 +117,12 @@
         function initMenu() {
             const menu = document.getElementById('week-menu');
             menu.innerHTML = '';
-            
             Object.keys(weeklyData).forEach(weekName => {
                 const btn = document.createElement('button');
                 btn.className = `week-btn ${weekName === currentWeek ? 'active' : ''}`;
                 btn.innerText = weekName;
-                
-                // Use pointerdown here too for better iOS responsiveness
                 btn.addEventListener('pointerdown', () => {
-                    unlockAudio(); // Unlock audio immediately when user interacts with menu
+                    unlockAudio();
                     currentWeek = weekName;
                     updateUI();
                 });
@@ -139,15 +131,10 @@
         }
 
         function updateUI() {
-            // Update menu buttons
             initMenu();
-            
-            // Update character cards
             const container = document.getElementById('app-container');
             container.innerHTML = '';
-            
             const currentList = weeklyData[currentWeek] || [];
-            
             currentList.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'char-card flex flex-col items-center justify-center aspect-square py-4';
@@ -155,40 +142,49 @@
                     <span class="text-gray-400 text-xs mb-1 pointer-events-none">${item.py}</span>
                     <span class="text-3xl font-medium text-gray-900 pointer-events-none">${item.zh}</span>
                 `;
-                
-                card.addEventListener('pointerdown', (e) => {
-                    handleSpeak(item.zh);
-                });
+                card.addEventListener('pointerdown', () => handleSpeak(item.zh));
                 container.appendChild(card);
             });
         }
 
-        async function handleSpeak(text) {
-            // Explicitly unlock audio on every tap
+        function handleSpeak(text) {
             unlockAudio();
             
-            // Wait a tiny bit for the unlock to process
-            setTimeout(() => {
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-CN';
-                utterance.rate = 0.85;
-                
-                const voices = window.speechSynthesis.getVoices();
-                const zhVoice = voices.find(v => v.lang.includes('zh-CN') || v.lang.includes('zh-HK') || v.lang === 'zh');
-                if (zhVoice) utterance.voice = zhVoice;
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
 
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.8;
+
+            // Important: Find voice every single time
+            let voices = window.speechSynthesis.getVoices();
+            let zhVoice = voices.find(v => v.lang.includes('zh-CN') || v.lang.includes('zh-HK') || v.lang.includes('zh-TW'));
+            
+            if (zhVoice) {
+                utterance.voice = zhVoice;
+            }
+
+            // Small delay helps Safari process the "cancel" before starting new speech
+            setTimeout(() => {
                 window.speechSynthesis.speak(utterance);
-            }, 10);
+            }, 50);
         }
 
         function unlockAudio() {
-            // Method 1: Speech synthesis unlock
+            // Wake up speech synthesis
             const s = new SpeechSynthesisUtterance('');
             window.speechSynthesis.speak(s);
+
+            // Wake up Web Audio (Safari needs this sometimes too)
+            if (window.AudioContext || window.webkitAudioContext) {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                if (context.state === 'suspended') {
+                    context.resume();
+                }
+            }
             
-            // Method 2: Web Audio API / HTML5 Audio unlock
+            // Play tiny silent sound
             const audio = new Audio();
             audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==";
             audio.play().catch(() => {});
@@ -196,7 +192,11 @@
 
         window.onload = () => {
             updateUI();
-            // Global touchstart listener to keep audio channel warm
+            // Pre-load voices
+            window.speechSynthesis.getVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+            }
             document.addEventListener('touchstart', unlockAudio, { passive: true });
         };
     </script>
